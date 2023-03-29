@@ -5,6 +5,10 @@ const roundSchema = new mongoose.Schema({
     type: Array,
     required: true
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
   CreatedAt: {
     type: Date,
     default: Date.now

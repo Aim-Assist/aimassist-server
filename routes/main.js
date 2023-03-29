@@ -6,5 +6,6 @@ require('dotenv').config();
 const roundController = require('../controllers/rounds')
 
 router.post('/postRound', roundController.postRoundData)
+router.get('/getAllRound', roundController.getAllRoundData)
 
 module.exports = router;
