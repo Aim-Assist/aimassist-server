@@ -23,9 +23,19 @@ const getAllRoundData = async (req, res) => {
         .catch((err) => console.log(err));
 }
 
-const getRoundData = 
+const getAllScores = async (req, res) => {
+    try {
+        const roundData = await Round_Model.find().sort({ createdAt: -1 });
+        const scores = roundData.map(data => data.scores);
+        res.status(200).json({ scores });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+}
+
 
 module.exports = {
     postRoundData,
-    getAllRoundData
+    getAllRoundData,
+    getAllScores
 }
