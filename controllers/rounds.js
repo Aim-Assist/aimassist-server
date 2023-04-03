@@ -1,9 +1,7 @@
 const Round_Model = require('../models/Round');
 
 const postRoundData = async (req, res) => {
-
     const dataSend = req.body;
-
     const newData = new Round_Model(dataSend);
         newData
             .save()
