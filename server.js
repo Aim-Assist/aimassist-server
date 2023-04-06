@@ -8,7 +8,7 @@ const cors = require("cors");
 const MURL = process.env.MONGO_URL
 
 // Route Files
-const main = require("./routes/main");
+const initRoutes = require("./routes/main");
 const publicKey = process.env.PUBLIC_URL;
 
 mongoose
@@ -26,6 +26,7 @@ const corsOptions = {
   origin: publicKey,
 };
 
+initRoutes(app);
 
 app.use(cors());
 
@@ -36,7 +37,7 @@ app.use(express.urlencoded({ limit: '50mb' }));
 
 
 // Routing for API Service
-app.use("/api/v1/main", main);
+
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, console.log(`Server running on port ${PORT}`.yellow.bold));

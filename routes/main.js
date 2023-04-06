@@ -1,12 +1,9 @@
-const express = require('express');
-require('dotenv').config();
-const router = express.Router();
-require('dotenv').config();
+const userRoute = require("./user")
+const roundRoute = require("./round")
 
-const roundController = require('../controllers/rounds')
+const initRoutes = (app) => {
+    app.use("/api/v1/user", userRoute);
+    app.use("/api/v1/round", roundRoute);
+};
 
-router.post('/postRound', roundController.postRoundData)
-router.get('/getAllRound', roundController.getAllRoundData)
-router.get('/allScores', roundController.getAllScores)
-
-module.exports = router;
+module.exports = initRoutes;
