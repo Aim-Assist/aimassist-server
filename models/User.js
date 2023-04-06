@@ -17,6 +17,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     require: true,
   },
+  latest_accuracy: {
+    type: Number,
+  },
+  prev_accuracy: [
+    {
+      type: Number,
+    },
+  ],
+  session_started: {
+    type: Boolean,
+    default: false,
+  },
   token: {
     type: String,
   },
