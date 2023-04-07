@@ -7,7 +7,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 
-const MURL = process.env.DATABASE_URL;
+const MURL = process.env.MONGO_URL;
 
 // Route Files
 const initRoutes = require("./routes/main");
