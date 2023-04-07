@@ -3,20 +3,10 @@ const mongoose = require("mongoose");
 const roundSchema = new mongoose.Schema({
   scores: [
     {
-      angle: {
-        type: Number,
-        required: true,
-      },
-      points: {
-        type: Number,
-        required: true,
-      }
+      type: Array,
+      required: true,
     }
   ],
-  distance: {
-    type: Number,
-    required: true,
-  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
