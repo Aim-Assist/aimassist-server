@@ -1,39 +1,57 @@
-const Round = require('../models/Round');
+const Round = require("../models/Round");
 
-const postRoundData = async (req, res) => {
-    const dataSend = req.body;
-    const newData = new Round(dataSend);
-        newData
-            .save()
-            .then((data) => {
-                console.log(data)
-                res.status(200).json({status: true, data});
-            })
-            .catch((err) => console.log(err));
+module.exports.postRoundData = async (req, res) => {
+  let response = {
+    success: false,
+    message: "",
+    errMessage: "",
+  };
+  const { scores, userId } = req.body;
+  if (scores.length < 10) {
+    return res.status(422).json({ message: "Please enter 10 scores" });
+  }
+  try {
+    const newRound = new Round({
+      scores,
+      userId,
+    });
+    await newRound.save();
+    response.success = true;
+    response.message = "Round data saved successfully";
+    res.status(200).json(response);
+  } catch (err) {
+    console.log(err);
+    response.errMessage = err.message;
+    res.status(500).json(response);
+  }
+};
 
-}
-
-const getAllRoundData = async (req, res) => {
-    Round.find().sort({ createdAt: -1 })
-        .then((data) => {
-            res.status(200).json({ status: true, data });
-        })
-        .catch((err) => console.log(err));
-}
-
-const getAllScores = async (req, res) => {
+module.exports.getAllRoundData = async (req, res) => {
+    let response = {
+        success: false,
+        message: "",
+        errMessage: "",
+        data: [],
+    };
     try {
         const roundData = await Round.find().sort({ createdAt: -1 });
-        const scores = roundData.map(data => data.scores);
-        res.status(200).json({ scores });
+        response.success = true;
+        response.message = "Round data fetched successfully";
+        response.data = roundData;
+        res.status(200).json(response);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        console.log(err);
+        response.errMessage = err.message;
+        res.status(500).json(response);
     }
-}
+};
 
-
-module.exports = {
-    postRoundData,
-    getAllRoundData,
-    getAllScores
-}
+// module.exports.getAllScores = async (req, res) => {
+//   try {
+//     const roundData = await Round.find().sort({ createdAt: -1 });
+//     const scores = roundData.map((data) => data.scores);
+//     res.status(200).json({ scores });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
