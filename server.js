@@ -28,7 +28,7 @@ const app = express();
 //   origin: publicKey,
 // };
 
-app.use(cookieParser())
+app.use(cookieParser());
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -45,3 +45,4 @@ app.use(express.urlencoded({ limit: "50mb" }));
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, console.log(`Server running on port ${PORT}`.yellow.bold));
+

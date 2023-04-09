@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 module.exports.register = async (req, res) => {
   const response = {
-    success: true,
+    success: false,
     message: "",
     errMessage: "",
   };
@@ -37,6 +37,13 @@ module.exports.register = async (req, res) => {
 };
 
 module.exports.login = async (req, res) => {
+  const response = {
+    success: false,
+    message: "",
+    errMessage: "",
+    token: "",
+    data: [],
+  };
   const { email, password } = req.body;
   let token = "";
   if (!email || !password) {
@@ -59,10 +66,31 @@ module.exports.login = async (req, res) => {
         maxAge: maxAge * 1000,
       });
 
+      User.findOneAndUpdate(
+        { email: email },
+        {
+          $set: {
+            token: token,
+          },
+        },
+        { new: true },
+        (err, doc) => {
+          if (err) {
+            console.log(err);
+          }
+          console.log(doc);
+        }
+      );
+
       if (!isMatch) {
-        return res.status(400).json({ message: "Invalid Credentials" });
+        response.message = "Invalid Credentials";
+        return res.status(400).json(response);
       } else {
-        res.json({ message: "Login Successful" });
+        response.success = true;
+        response.message = "Login Successful";
+        response.token = token;
+        response.data = user;
+        res.status(200).json(response);
       }
     }
   } catch (err) {
@@ -83,7 +111,7 @@ module.exports.logout = async (req, res) => {
   };
   try {
     User.findOneAndUpdate(
-      { _id: req.user._id },
+      { _id: req.body._id },
       { $set: { token: "" } },
       { new: true },
       (err, doc) => {
