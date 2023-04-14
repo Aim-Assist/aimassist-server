@@ -10,10 +10,9 @@ module.exports.startsession = async (req, res) => {
     try {
       let id;
       const { userid, distance, device } = req.body;
-  
-      if (device === 1) {
+      if (device == 1) {
         id = "6439867fc5286f255c5e72c2";
-      } else if (device === 2) {
+      } else if (device == 2) {
         id = "64398681c5286f255c5e72c4";
       } else {
         id = "64398682c5286f255c5e72c6";
@@ -29,7 +28,12 @@ module.exports.startsession = async (req, res) => {
           },
         },
         { new: true }
-      );
+      ).then((data) => {
+        response.success = true;
+        response.message = "Session Started successfully";
+        response.data = data;
+        res.status(200).json(response);
+      })
     } catch (err) {
       response.errMessage = err.message;
       res.status(500).json(response);
@@ -53,7 +57,11 @@ module.exports.startsession = async (req, res) => {
             session_started: false,
           },
         }
-      );
+      ).then((data) => {
+        response.success = true;
+        response.message = "Session data saved successfully";
+        res.status(200).json(response);
+      })
     } catch (err) {
       response.errMessage = err.message;
       res.status(500).json(response);
@@ -68,12 +76,13 @@ module.exports.startsession = async (req, res) => {
       data: [],
     }
     try{
-      const device = req.params.device;
+      const device = req.query.device;
+      console.log(req.query);
       let id;
   
-      if (device === "1") {
+      if (device == 1) {
         id = "6439867fc5286f255c5e72c2";
-      } else if (device === "2") {
+      } else if (device == 2) {
         id = "64398681c5286f255c5e72c4";
       } else {
         id = "64398682c5286f255c5e72c6";
