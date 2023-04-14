@@ -1,4 +1,5 @@
 const Round = require("../models/Round");
+const User = require("../models/User");
 const tf = require("@tensorflow/tfjs");
 
 module.exports.postRoundData = async (req, res) => {
@@ -27,21 +28,41 @@ module.exports.postRoundData = async (req, res) => {
         }
       }
     }
-    console.log(scores);
-    console.log(previousData);
 
-    const latestData = [
-      [30, 10, 4],
-      [30, 10, 3],
-      [60, 10, 3],
-      [60, 10, 2],
-      [90, 10, 2],
-      [90, 10, 5],
-      [120, 10, 1],
-      [120, 10, 5],
-      [150, 10, 4],
-      [150, 10, 1],
-    ];
+    let onlyScores = [];
+    let avgs = [];
+    let latest_scores = [];
+    for (let i = 0; i < previousData.length; i++) {
+      score = [];
+      for (let j = 0; j < previousData[i].length; j++) {
+        score.push(previousData[i][j][2]);
+        if (score.length === 10) {
+          onlyScores.push(score);
+        }
+      }
+    }
+
+    for (let i = 0; i < onlyScores.length; i++) {
+      if (onlyScores[i].length === 10) {
+        avgs.push(
+          onlyScores[i].reduce((a, b) => a + b, 0) / onlyScores[i].length
+        );
+      }
+    }
+
+    for (let i = 0; i < scores.length; i++) {
+      latest_scores.push(scores[i][2]);
+    }
+
+    let avg = latest_scores.reduce((a, b) => a + b, 0) / latest_scores.length;
+    avgs.push(avg);
+
+    // sort the array
+    avgs.sort((a, b) => a - b);
+    console.log(avg, avgs);
+
+    let index = avgs.indexOf(avg) + 1;
+    let percentile = (index / avgs.length) * 100;
 
     // Flatten the previous data into a single array
     // const model = tf.sequential();
@@ -128,116 +149,25 @@ module.exports.postRoundData = async (req, res) => {
     // console.log("Proficiency at the angles:");
     // console.log(proficiency);
 
-    // Define the model architecture
-    // const model = tf.sequential();
-    // model.add(
-    //   tf.layers.dense({ units: 10, activation: "relu", inputShape: [10, 3] })
-    // );
-    // model.add(tf.layers.flatten());
-    // model.add(tf.layers.dense({ units: 5, activation: "softmax" }));
-
-    // // Compile the model
-    // model.compile({
-    //   optimizer: tf.train.adam(),
-    //   loss: "categoricalCrossentropy",
-    //   metrics: ["accuracy"],
-    // });
-
-    // // Preprocess the data
-    // const X_train = preprocessData(trainData);
-    // const y_train = preprocessLabels(trainLabels);
-    // const X_test = preprocessData(testData);
-    // const y_test = preprocessLabels(testLabels);
-
-    // // Train the model
-    // const history = await model.fit(X_train, y_train, {
-    //   epochs: 50,
-    //   validationData: [X_test, y_test],
-    // });
-
-    // // Use the model to make predictions
-    // const predictions = model.predict(X_test);
-    // const predictedLabels = postprocessLabels(predictions);
-
-    // // Evaluate the model
-    // const [testLoss, testAcc] = model.evaluate(X_test, y_test);
-
-    // console.log("Test loss:", testLoss.toFixed(4));
-    // console.log("Test accuracy:", testAcc.toFixed(4));
-
-    // // Determine which angles the user is good at and which angles they need to improve on
-    // const goodAngles = [];
-    // const improveAngles = [];
-
-    // for (let i = 0; i < predictedLabels.length; i++) {
-    //   const predictedLabel = predictedLabels[i];
-    //   const actualLabel = testLabels[i];
-    //   const angle = actualLabel[0];
-    //   const points = actualLabel[2];
-
-    //   if (predictedLabel === points) {
-    //     goodAngles.push(angle);
-    //   } else {
-    //     improveAngles.push(angle);
-    //   }
-    // }
-
-    // console.log("User is good at angles:", goodAngles);
-    // console.log("User needs to improve on angles:", improveAngles);
-
-    // const inputShape = [3]; // three features: angle, distance, and points scored
-    // const outputShape = [5]; // five classes: 30deg, 60deg, 90deg, 120deg, 150deg
-
-    // Define the architecture of the neural network
-    // const model = tf.sequential();
-    // model.add(tf.layers.dense({ units: 10, activation: "relu" }));
-    // model.add(tf.layers.dense({ units: 5, activation: "softmax" }));
-
-    // // Compile the model with an appropriate loss function and optimizer
-    // model.compile({ loss: "categoricalCrossentropy", optimizer: "adam" });
-
-    // const xTrain = tf.tensor3d(
-    //   [...previousData, ...scores].map(([angle, distance, points]) => [
-    //     angle,
-    //     distance,
-    //     points,
-    //   ])
-    // );
-    // const yTrain = tf.oneHot(
-    //   tf.tensor1d(
-    //     [
-    //       ...Array(previousData.length).fill(0),
-    //       ...Array(scores.length).fill(1),
-    //     ].map((_, i) => i % 10)
-    //   ).toInt(),
-    //   5
-    // );
-
-    // model.fit(xTrain, yTrain, { epochs: 50 }).then(() => {
-    //   // Use the model to make predictions on the latest data
-    //   const xTest = tf.tensor2d(
-    //     scores.map(([angle, distance, points]) => [angle, distance, points])
-    //   );
-    //   const yTest = model.predict(xTest);
-    //   const predictedAngles = yTest.argMax(1).arraySync();
-
-    //   // Analyze the predictions to determine which angles the user is good at
-    //   // and which angles they need to improve on
-    //   const angleCounts = [0, 0, 0, 0, 0];
-    //   predictedAngles.forEach((angle) => angleCounts[angle]++);
-    //   const bestAngle = predictedAngles[0];
-    //   const worstAngle = angleCounts.indexOf(Math.min(...angleCounts)) * 30 + 30;
-
-    //   console.log(
-    //     `The user is best at ${bestAngle}deg and needs to improve at ${worstAngle}deg.`
-    //   );
-    // });
-
     const newRound = new Round({
       scores,
       userId,
     });
     await newRound.save();
+
+    await User.findOneAndUpdate(
+      { _id: userId },
+      {
+        $set: {
+          latest_accuracy: percentile,
+          latest_score: scores,
+        },
+        $push: {
+          prev_accuracy: percentile,
+        },
+      },
+      { new: true }
+    );
     response.success = true;
     response.message = "Round data saved successfully";
     res.status(200).json(response);

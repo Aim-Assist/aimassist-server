@@ -27,9 +27,8 @@ const userSchema = new mongoose.Schema({
       type: Number,
     },
   ],
-  session_started: {
-    type: Boolean,
-    default: false,
+  latest_score: {
+    type: Array,
   },
   token: {
     type: String,
