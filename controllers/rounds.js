@@ -1,6 +1,7 @@
 const Round = require("../models/Round");
 const User = require("../models/User");
 const tf = require("@tensorflow/tfjs");
+const nj = require("numjs");
 
 module.exports.postRoundData = async (req, res) => {
   let response = {
@@ -27,6 +28,12 @@ module.exports.postRoundData = async (req, res) => {
           score.push(data);
         }
       }
+    }
+
+    // Find frequency of scores
+    let frequency = {1: 0,2: 0, 3: 0, 4: 0, 5: 0};
+    for (let i = 0; i < scores.length; i++) {
+      frequency[scores[i][2]] += 1;
     }
 
     let onlyScores = [];
@@ -59,10 +66,245 @@ module.exports.postRoundData = async (req, res) => {
 
     // sort the array
     avgs.sort((a, b) => a - b);
-    console.log(avg, avgs);
 
     let index = avgs.indexOf(avg) + 1;
     let percentile = (index / avgs.length) * 100;
+
+    let latest_point = {};
+    for (let i = 0; i < scores.length; i++) {
+      let angle = scores[i][0];
+      let points = scores[i][2];
+      if (angle in latest_point) {
+        latest_point[angle].push(points);
+      } else {
+        latest_point[angle] = [points];
+      }
+    }
+
+    let previous_points = [];
+    for (let i = 0; i < previousData.length; i++) {
+      let user_points = {};
+      for (let j = 0; j < previousData[i].length; j++) {
+        let angle = previousData[i][j][0];
+        let points = previousData[i][j][2];
+        if (angle in user_points) {
+          user_points[angle].push(points);
+        } else {
+          user_points[angle] = [points];
+        }
+      }
+      previous_points.push(user_points);
+    }
+
+    average_points = {};
+    for (let i = 0; i < previous_points.length; i++) {
+      // get angle and points
+      for (angle in previous_points[i]) {
+        average_points[angle] =
+          previous_points[i][angle].reduce((a, b) => a + b, 0) /
+          previous_points[i][angle].length;
+      }
+    }
+
+    let good_angles = [];
+    let improve_angles = [];
+    latest_angle_avg = {};
+    for (const [angle, points] of Object.entries(latest_point)) {
+      if (angle in average_points) {
+        const avg_points_score = average_points[angle];
+        const latest_points_score =
+          points.reduce((a, b) => a + b, 0) / points.length;
+        latest_angle_avg[angle] = latest_points_score;
+        if (latest_points_score > avg_points_score) {
+          good_angles.push(angle);
+        } else {
+          improve_angles.push(angle);
+        }
+      } else {
+        good_angles.push(angle);
+      }
+    }
+
+    let best_angle = 0;
+    if (good_angles.length <= 0) {
+      best_angle = null;
+    } else {
+      // best_angle = nj.max(good_angles, (key = average_points[angle]));
+      best_angle = good_angles.reduce((prevAngle, currAngle) => {
+        const prevPoints = average_points[prevAngle] || 0;
+        const currPoints = average_points[currAngle] || 0;
+        return currPoints > prevPoints ? currAngle : prevAngle;
+      });
+    }
+
+    let improve_angle = 0;
+    if (improve_angles.length <= 0) {
+      improve_angle = null;
+    } else {
+      // improve_angle = nj.max(improve_angles, (key = average_points[angle]));
+      improve_angle = improve_angles.reduce((maxAngle, angle) => {
+        const maxPoints = average_points[maxAngle] || 0;
+        const currPoints = average_points[angle] || 0;
+        return currPoints > maxPoints ? angle : maxAngle;
+      });
+    }
+
+    angle_labels1 = {
+      30: "Angle 1",
+      60: "Angle 2",
+      90: "Angle 3",
+      120: "Angle 4",
+      150: "Angle 5",
+    };
+
+    angle_labels = [
+      "Angle 30Deg",
+      "Angle 60Deg",
+      "Angle 90Deg",
+      "Angle 120Deg",
+      "Angle 150Deg",
+    ];
+
+    const model = tf.sequential();
+    model.add(
+      tf.layers.dense({ inputShape: [5], units: 16, activation: "relu" })
+    );
+    model.add(tf.layers.dense({ units: 5, activation: "softmax" }));
+    model.compile({
+      optimizer: "adam",
+      loss: "categoricalCrossentropy",
+      metrics: ["accuracy"],
+    });
+    let good_angles_one_hot = [[0, 0, 0, 0, 0]];
+    let label = Object.keys(angle_labels1);
+
+    for (let i = 0; i < label.length; i++) {
+      if (good_angles.includes(label[i])) {
+        good_angles_one_hot[0][i] = 1;
+      }
+    }
+
+    const input = tf.tensor(good_angles_one_hot, [1, 5]);
+    let predicted_labels = model.predict(input);
+
+    const argmax_tensor = tf.argMax(predicted_labels, 1);
+    const argmin_tensor = tf.argMin(predicted_labels, 1);
+
+    let best = label[argmax_tensor.dataSync()[0]];
+    let worst = label[argmin_tensor.dataSync()[0]];
+
+    if (best !== best_angle || good_angles.length < 0) {
+      best = Object.keys(latest_angle_avg).reduce((a, b) =>
+        latest_angle_avg[a] > latest_angle_avg[b] ? a : b
+      );
+    }
+
+    if (worst !== improve_angle || improve_angles.length < 0) {
+      worst = Object.keys(latest_angle_avg).reduce((a, b) =>
+        latest_angle_avg[a] < latest_angle_avg[b] ? a : b
+      );
+    }
+
+    const latestRoundData = {
+      accuracy: percentile,
+      distance: scores[0][1],
+      bestangle: best,
+      worstangle: worst,
+    };
+
+    const newRound = new Round({
+      scores,
+      userId,
+      roundData: latestRoundData,
+      frequency: frequency,
+    });
+    await newRound.save();
+
+    await User.findOneAndUpdate(
+      { _id: userId },
+      {
+        $set: {
+          latest_accuracy: percentile,
+          latest_score: scores,
+          latestroundData: latestRoundData,
+          latestfrequency: frequency,
+        },
+        $push: {
+          prev_accuracy: percentile,
+        },
+      },
+      { new: true }
+    );
+    response.success = true;
+    response.message = "Round data saved successfully";
+    res.status(200).json(response);
+  } catch (err) {
+    console.log(err);
+    response.errMessage = err.message;
+    res.status(500).json(response);
+  }
+};
+
+module.exports.getAllRoundData = async (req, res) => {
+  let response = {
+    success: false,
+    message: "",
+    errMessage: "",
+    data: [],
+  };
+  try {
+    const roundData = await Round.find().sort({ createdAt: -1 });
+    response.success = true;
+    response.message = "Round data fetched successfully";
+    response.data = roundData;
+    res.status(200).json(response);
+  } catch (err) {
+    console.log(err);
+    response.errMessage = err.message;
+    res.status(500).json(response);
+  }
+};
+
+module.exports.getUserRounds = async (req, res) => {
+  let response = {
+    success: false,
+    message: "",
+    errMessage: "",
+    data: [],
+  };
+  try {
+    const userId = req.params.id;
+    const roundData = await Round.find({ userId : userId }).sort({ createdAt: -1 });
+    response.success = true;
+    response.message = "Round data fetched successfully";
+    response.data = roundData;
+    res.status(200).json(response);
+  } catch (err) {
+    console.log(err);
+    response.errMessage = err.message;
+    res.status(500).json(response);
+  }
+}
+
+    // // predict the best angle
+    // // let predict = [];
+    // // predict.push(good_angles_one_hot.selection.data);
+    // // console.log(predict);
+    // let predicted_labels;
+    // if (
+    //   good_angles_one_hot.selection &&
+    //   good_angles_one_hot.selection.data &&
+    //   good_angles_one_hot.selection.data.length > 0
+    // ) {
+    //   console.log("Predicting");
+    //   predicted_labels = model.predict(input);
+    // }
+    // console.log(predicted_labels);
+    // const argmin_tensor = predicted_labels.argMax();
+    // console.log(argmin_tensor);
+    // console.log(argmin_tensor.dataSync());
+    // predicted_label = angle_labels[nj.argmax(predicted_labels)];
+    // console.log("Predicted label: {}".format(predicted_label));
 
     // Flatten the previous data into a single array
     // const model = tf.sequential();
@@ -148,82 +390,3 @@ module.exports.postRoundData = async (req, res) => {
     // }
     // console.log("Proficiency at the angles:");
     // console.log(proficiency);
-
-    const newRound = new Round({
-      scores,
-      userId,
-    });
-    await newRound.save();
-
-    await User.findOneAndUpdate(
-      { _id: userId },
-      {
-        $set: {
-          latest_accuracy: percentile,
-          latest_score: scores,
-        },
-        $push: {
-          prev_accuracy: percentile,
-        },
-      },
-      { new: true }
-    );
-    response.success = true;
-    response.message = "Round data saved successfully";
-    res.status(200).json(response);
-  } catch (err) {
-    console.log(err);
-    response.errMessage = err.message;
-    res.status(500).json(response);
-  }
-};
-
-module.exports.getAllRoundData = async (req, res) => {
-  let response = {
-    success: false,
-    message: "",
-    errMessage: "",
-    data: [],
-  };
-  try {
-    const roundData = await Round.find().sort({ createdAt: -1 });
-    response.success = true;
-    response.message = "Round data fetched successfully";
-    response.data = roundData;
-    res.status(200).json(response);
-  } catch (err) {
-    console.log(err);
-    response.errMessage = err.message;
-    res.status(500).json(response);
-  }
-};
-
-// module.exports.getAllScores = async (req, res) => {
-//   try {
-//     const roundData = await Round.find().sort({ createdAt: -1 });
-//     const scores = roundData.map((data) => data.scores);
-//     res.status(200).json({ scores });
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
-
-// [
-//   [30, 10, 2],
-//   [30, 10, 2],
-//   [60, 10, 3],
-//   [60, 10, 5],
-//   [90, 10, 3],
-//   [90, 10, 4],
-//   [120, 10, 4],
-//   [120, 10, 3],
-//   [150, 10, 5],
-//   [150, 10, 3]
-// ]
-
-// 6431ad39a9b0891674d62703
-// 6431b5665d2f022b78b4845a
-// 6432a73e4101583ff0d1b61e
-// 6432a7824101583ff0d1b622
-// 6432a7994101583ff0d1b625
-// 6432a7a64101583ff0d1b628
