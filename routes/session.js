@@ -11,6 +11,7 @@ router.post('/create', sessionController.createSession)
 router.post('/startsession', sessionController.startsession)
 router.post('/endsession', sessionController.endsession)
 router.get('/getsession', sessionController.getsession)
+router.post('/updatescore', sessionController.updatescore)
 
 
 module.exports = router;

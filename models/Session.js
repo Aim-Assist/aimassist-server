@@ -13,6 +13,9 @@ const SessionSchema = new mongoose.Schema({
     },
     email : {
         type: String,
+    },
+    score : {
+        type: Array,
     }
 })
 

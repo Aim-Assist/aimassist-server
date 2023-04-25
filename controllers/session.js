@@ -56,7 +56,8 @@ module.exports.startsession = async (req, res) => {
             userid: null,
             distance: null,
             session_started: false,
-            email: null
+            email: null,
+            score: [],
           },
         }
       ).then((data) => {
@@ -122,4 +123,41 @@ module.exports.createSession = async (req, res) => {
         response.errMessage = err.message;
         res.status(500).json(response);
     }
+}
+
+module.exports.updatescore = async (req, res) => {
+  let response = {
+    success: false,
+    message: "",
+    errMessage: "",
+    data: [],
+  };
+  try{
+    const { device } = req.query;
+    const { score } = req.body;
+    let id;
+    if (device == 1) {
+      id = "6439867fc5286f255c5e72c2";
+    } else if (device == 2) {
+      id = "64398681c5286f255c5e72c4";
+    } else {
+      id = "64398682c5286f255c5e72c6";
+    }
+    await Session.findOneAndUpdate(
+      { _id: id },
+      {
+        $push: {
+          score: score,
+        },
+      }
+    ).then((data) => {
+      response.success = true;
+      response.message = "Score added successfully";
+      response.data = data;
+      res.status(200).json(response);
+    });
+  } catch (err) {
+    response.errMessage = err.message;
+    res.status(500).json(response);
+  }
 }
