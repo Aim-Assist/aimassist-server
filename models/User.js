@@ -33,6 +33,23 @@ const userSchema = new mongoose.Schema({
       type: Number,
     },
   ],
+  latestroundData: {
+    accuracy: {
+      type: Number,
+    },
+    distance: {
+      type: Number,
+    },
+    bestangle: {
+      type: Number,
+    },
+    worstangle: {
+      type: Number,
+    }
+  },
+  latestfrequency: {
+    type: Object,
+  },
   latest_score: {
     type: Array,
   },

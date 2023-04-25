@@ -9,5 +9,6 @@ router.post('/signup', userController.register)
 router.post('/login', userController.login)
 router.post('/home',authentication, userController.home)
 router.post('/logout',authentication, userController.logout)
+router.get("/getUser", userController.getUser);
 
 module.exports = router;
