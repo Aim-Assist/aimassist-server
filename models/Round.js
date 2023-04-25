@@ -14,6 +14,23 @@ const roundSchema = new mongoose.Schema({
   userId: {
     type: String,
   },
+  roundData: {
+    accuracy: {
+      type: Number,
+    },
+    distance: {
+      type: Number,
+    },
+    bestangle: {
+      type: Number,
+    },
+    worstangle: {
+      type: Number,
+    }
+  },
+  frequency: {
+    type: Object,
+  },
   CreatedAt: {
     type: Date,
     default: Date.now,
