@@ -10,6 +10,9 @@ const SessionSchema = new mongoose.Schema({
     session_started : {
         type: Boolean,
         default: false,
+    },
+    email : {
+        type: String,
     }
 })
 

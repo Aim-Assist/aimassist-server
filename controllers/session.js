@@ -9,7 +9,7 @@ module.exports.startsession = async (req, res) => {
     };
     try {
       let id;
-      const { userid, distance, device } = req.body;
+      const { userid, distance, device, email } = req.body;
       if (device == 1) {
         id = "6439867fc5286f255c5e72c2";
       } else if (device == 2) {
@@ -25,6 +25,7 @@ module.exports.startsession = async (req, res) => {
             userid,
             distance,
             session_started: true,
+            email,
           },
         },
         { new: true }
@@ -55,6 +56,7 @@ module.exports.startsession = async (req, res) => {
             userid: null,
             distance: null,
             session_started: false,
+            email: null
           },
         }
       ).then((data) => {
@@ -106,10 +108,11 @@ module.exports.createSession = async (req, res) => {
         data: [],
     };
     try {
-        const { userid, distance } = req.body;
+        const { userid, distance, email } = req.body;
         const newSession = new Session({
         userid,
         distance,
+        email
         });
         await newSession.save();
         response.success = true;

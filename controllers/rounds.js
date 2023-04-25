@@ -9,7 +9,7 @@ module.exports.postRoundData = async (req, res) => {
     errMessage: "",
   };
 
-  const { scores, userId } = req.body;
+  const { scores, userId, email } = req.body;
   if (scores.length < 10) {
     return res.status(422).json({ message: "Please enter 10 scores" });
   }
@@ -152,11 +152,12 @@ module.exports.postRoundData = async (req, res) => {
     const newRound = new Round({
       scores,
       userId,
+      email
     });
     await newRound.save();
 
     await User.findOneAndUpdate(
-      { _id: userId },
+      { email: email },
       {
         $set: {
           latest_accuracy: percentile,

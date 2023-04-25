@@ -19,6 +19,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     require: true,
   },
+  firebaseId: {
+    type: String,
+  },
+  role: {
+    type: String,
+  },
   latest_accuracy: {
     type: Number,
   },

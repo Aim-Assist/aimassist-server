@@ -8,7 +8,7 @@ module.exports.register = async (req, res) => {
     errMessage: "",
   };
   console.log(req.body);
-  const { name, email, password, phoneno } = req.body;
+  const { name, email, password, phoneno, firebaseId } = req.body;
   if (!name || !email || !password || !phoneno) {
     return res.status(422).json({ message: "Please fill all the fields" });
   }
@@ -25,6 +25,8 @@ module.exports.register = async (req, res) => {
       email,
       password,
       phoneno,
+      firebaseId,
+      role: "employee"
     });
     await newUser.save();
     response.success = true;
@@ -34,6 +36,7 @@ module.exports.register = async (req, res) => {
     console.log(err);
   }
 };
+
 
 module.exports.login = async (req, res) => {
   const response = {
