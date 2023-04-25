@@ -153,3 +153,25 @@ module.exports.logout = async (req, res) => {
     console.log(err);
   }
 }
+
+module.exports.getUserByEmail = async (req, res) => {
+  const response = {
+    success: false,
+    message: "",
+    errMessage: "",
+    data: [],
+  };
+  try {
+    const user = await User.findOne({ email: req.query.email });
+    if (!user) {
+      return res.status(400).json({ message: "User does not exist" });
+    } else {
+      response.success = true;
+      response.message = "User found";
+      response.data = user;
+      res.status(200).json(response);
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}

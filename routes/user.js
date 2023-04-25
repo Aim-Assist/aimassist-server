@@ -10,5 +10,5 @@ router.post('/login', userController.login)
 router.post('/home',authentication, userController.home)
 router.post('/logout',authentication, userController.logout)
 router.get("/getUser", userController.getUser);
-
+router.get("/getUserByEmail", userController.getUserByEmail);
 module.exports = router;
