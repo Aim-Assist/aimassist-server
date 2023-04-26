@@ -147,9 +147,9 @@ module.exports.updatescore = async (req, res) => {
       { _id: id },
       {
         $push: {
-          score: score,
+          score: [score],
         },
-      }
+      },
     ).then((data) => {
       response.success = true;
       response.message = "Score added successfully";
