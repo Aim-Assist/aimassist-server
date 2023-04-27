@@ -143,6 +143,12 @@ module.exports.updatescore = async (req, res) => {
     } else {
       id = "64398682c5286f255c5e72c6";
     }
+    let session = await Session.findById(id);
+    if(session.score.length == 10){
+      response.success = false;
+      response.errMessage = "Can't add more than 10 scores";
+      return res.status(200).json(response);
+    }
     await Session.findOneAndUpdate(
       { _id: id },
       {
