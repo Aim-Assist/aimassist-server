@@ -33,7 +33,7 @@ module.exports.postRoundData = async (req, res) => {
     // Find frequency of scores
     let frequency = {1: 0,2: 0, 3: 0, 4: 0, 5: 0};
     for (let i = 0; i < scores.length; i++) {
-      frequency[scores[i][2]] += 1;
+      frequency[scores[i][2]] += 1.01;
     }
 
     let onlyScores = [];
